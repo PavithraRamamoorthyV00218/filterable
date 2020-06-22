@@ -12,11 +12,12 @@ module Generators
 
     private
 
-    def relation
-      relation_name.to_s.classify.constantize
-    end
+    #def relation
+      #relation_name.to_s.classify.constantize
+    #end
 
     def generate_joined_filter(filter, field, relation_name, join_options)
+      #binding.pry
       model.define_singleton_method(
         "by_#{filter}",
         ->(value) {
@@ -62,8 +63,22 @@ module Generators
       @relations ||= extract_relations(options[:joins])
     end
 
+    def constantize_relations
+      previous = nil
+      relations.map! do |rel|
+        if previous.nil?
+          parent_model_name = model
+        else
+          parent_model_name = previous.to_s.classify.constantize
+        end
+        rel = parent_model_name.reflect_on_association(rel).options[:class_name].constantize.table_name if parent_model_name.reflect_on_association(rel).options[:class_name].present?
+        previous = rel
+      end
+      relations
+    end
+
     def relation_name
-      @relation_name ||= relations.last
+      @relation_name ||= constantize_relations.last
     end
 
     def joined_field(filter)
